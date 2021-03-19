@@ -19,7 +19,8 @@ void printUsage(char *u) {
 	printf("         -T\t\tTrucha sign Ticket\n");
 	printf("         -M\t\tTrucha sign TMD\n");
 	printf("         -i ABCD\tChange the title id\n");
-	printf("         -w\t\tDisables watermark on the ticket and uses a compatible generic ticket.\n\n");
+	printf("         -w\t\tUses a compatible generic ticket.\n\n");
+	printf("         -e\t\tDisable content encryption.\n\n");
 	exit(-1);
 }
  
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
 	u8 sign_tik = 0;
 	u8 sign_tmd = 0;
 	u8 sign_type = 1; // Sign type. if 1 watermark enabled. if 0 watermark disabled
+	u8 encrypt_apps = 1;
 	u8 *new_id = NULL;
 	
 	if (argc<5) {
@@ -82,7 +84,10 @@ int main(int argc, char **argv) {
 				}
 			} else if (strcmp(argv[i-1], "-w")==0) { // Disable watermark
 				sign_type = 0;
-				printf("Watermark is disabled. A generic ticket will be used.\n");
+				printf("A generic ticket will be used.\n");
+			} else if (strcmp(argv[i-1], "-e")==0) { // Disable .app encryption
+				encrypt_apps = 0;
+				printf("Contents will not be encrypted.\n");
 			}
 			fflush(stdout);
 		}
@@ -144,8 +149,12 @@ int main(int argc, char **argv) {
 		int ok = Ticket_resign(tik, len_tik_nb, sign_type);
 		printf("OK\n", ok);
 	}
-	// Get Title key
-	decrypt_title_key(tik, title_key);
+
+	if(encrypt_apps) {
+		// Get Title key
+		decrypt_title_key(tik, title_key);
+	}
+
 	// Read app files
 	for (i=0;i<num_app;i++) {
 		sprintf(name, "%08x.app", i);
@@ -167,17 +176,21 @@ int main(int argc, char **argv) {
 		memset(apps+len_apps-temp2, 0, temp2);
 		fread(apps+len_apps-temp2, temp, 1, fapp);
 		fclose(fapp);
-		// SHA hash update
-		sha(apps+len_apps-temp2, temp, hash);
-		memcpy(tmd + 0x1F4 + (0x24*i), hash, 20);
-		// File size update
-		wbe64(tmd + 0x1EC + (0x24*i), temp);
-		// Encrypt file
-		memset(iv, 0, sizeof iv);
-		memcpy(iv, tmd + 0x01e8 + 0x24*i, 2);
-		aes_cbc_enc(title_key, iv, apps+len_apps-temp2, round_up(temp, 0x10), apps+len_apps-temp2);
+
+		if(encrypt_apps) {
+			// SHA hash update
+			sha(apps+len_apps-temp2, temp, hash);
+			memcpy(tmd + 0x1F4 + (0x24*i), hash, 20);
+			// File size update
+			wbe64(tmd + 0x1EC + (0x24*i), temp);
+			// Encrypt file
+			memset(iv, 0, sizeof iv);
+			memcpy(iv, tmd + 0x01e8 + 0x24*i, 2);
+			aes_cbc_enc(title_key, iv, apps+len_apps-temp2, round_up(temp, 0x10), apps+len_apps-temp2);
+		}
 		printf("OK\n");
 	}
+
 	// Sign
 	if (sign_tmd) {
 		printf("Signing TMD... ");
@@ -198,12 +211,12 @@ int main(int argc, char **argv) {
 	wbe32(header + 0x18, len_apps); // APP length
 	wbe32(header + 0x1C, len_trailer_nb); // Trailer length
 	printf("OK\n");
-	
+
 	//Write final WAD file
 	printf("Writing %s file... ", argv[4]);
 	fapp = fopen(argv[4], "wb");
 	if (!fapp) {
-		printf("Could not open destination file (%s).\n", argv[3]);
+		printf("\nCould not open destination file.\n");
 	}
 	fwrite(header, 0x40, 1, fapp);
 	fwrite(cert, len_cert, 1, fapp);

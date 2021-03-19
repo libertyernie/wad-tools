@@ -99,7 +99,7 @@ static void do_install_wad(u8 *header)
 	u8 *app;
 	u8 *trailer;
 	u32 ret;
-	char name[17];
+	char name[25];
 
 	header_len = be32(header);
 	if (header_len != 0x20)
@@ -146,7 +146,7 @@ static void do_install_wad(u8 *header)
 	cf = fopen(name, "w");
 	fwrite(tik, tik_len, 1, cf);
 	fclose(cf);
-	
+
 	fprintf(stderr, "ticket:\n");
 	hexdump(tik, tik_len);
 	fprintf(stderr, "tmd:\n");

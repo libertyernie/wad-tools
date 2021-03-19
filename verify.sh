@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 make
-rm -r 000100014d425545
+rm -r 000100014d425545 || true
 cp /cygdrive/c/InjectionArea/common-key.bin .
 ./wadunpacker /cygdrive/c/InjectionArea/Sonic3DBlast.wad
 cd 0001*

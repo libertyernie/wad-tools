@@ -596,7 +596,7 @@ u64 getfilesize(u32 *fd) {
 // TMD trucha sign
 int TMD_resign(u8 *tmd, u32 tmd_len) {
 	u8 hash[20];
-	u32 num = 0x00000000;
+	u16 num = 0x0000;
 	u8 *sig;
 	u8 *sub;
 	u32 sig_len;
@@ -637,7 +637,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 	u32 sub_len;
 	u8 *new_tik;
 	u8 part[16] = {0x42, 0x46, 0x47, 0x52, 0x42, 0x65, 0x46, 0x72, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x21};
-	
+
 	if (!homebrew) { // option -w enabled (watermark disabled)
 		new_tik = (u8 *)malloc(676);
 		memcpy(new_tik, generic_tik, 676);
@@ -661,7 +661,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 	// Check if the ticket is already signed
 	sha(sub, sub_len, hash);
 	if (hash[0]==0x00) { printf(" %d it. ", num); return 1; }
-	
+
 	if (homebrew) { // Set watermark
 		memcpy(tik + 0x01BF, part, 16);
 	}
@@ -676,7 +676,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 		sha(sub, sub_len,hash);
 		//printHashSHA(hash);
 		if (hash[0]==0x00) break;
-		
+
 		if (num==65535) return 0;
 		// Title key mod
 		memcpy(tik + 0x01F1, &num, sizeof(u16));
