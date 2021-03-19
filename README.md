@@ -1,1 +1,0 @@
-This tool is a modification of FunKiiU and just allows you to download Wii contents from the Nintendo CDN and package them into .wad files. You need to compile the provided wadpacker and place it in your PATH. A title key is needed for anything except system titles and some free titles. DLCs will be correctly handled as well.
