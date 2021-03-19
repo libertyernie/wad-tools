@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 	u8 sign_tmd = 0;
 	u8 sign_type = 1; // Sign type. if 1 watermark enabled. if 0 watermark disabled
 	u8 encrypt_apps = 1;
-	u8 *new_id = NULL;
+	char *new_id = NULL;
 	
 	if (argc<5) {
 		printUsage(argv[0]);
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 				printf("Trucha sign enabled for TMD\n");
 			} else if (strcmp(argv[i-1], "-i")==0) { // Change title id
 				if (strlen(argv[i])==4) {
-					new_id = (u8 *)malloc(4);
+					new_id = (char *)malloc(4);
 					memset(new_id, 0, 4);
 					strncpy(new_id, argv[i], 4);
 					i++;
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
 	if (sign_tik) {
 		printf("Signing Ticket... ");
 		int ok = Ticket_resign(tik, len_tik_nb, sign_type);
-		printf("OK\n", ok);
+		printf("result code %d\n", ok);
 	}
 
 	if(encrypt_apps) {
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 		if (!fapp) {
 			printf("\nERROR: Could not find %s file.\n", name);
 			printf("File TMD Description:\n");
-			printf("File size: %d bytes\n", be64(tmd + 0x01ec + 0x24*i));
+			printf("File size: %lld bytes\n", be64(tmd + 0x01ec + 0x24*i));
 			printf("File SHA Hash: 0x");
 			printHashSHA(tmd + 0x01F4 + (0x24*i));
 			printf("\n");

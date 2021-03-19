@@ -276,7 +276,7 @@ static int check_rsa_trucha(u8 *h, u8 *sig, u8 *key, u32 n)
 //fprintf(stderr, "x is:\n");
 //hexdump(x, n);
 
-	if (strncmp(correct, x, n) == 0)
+	if (memcmp(correct, x, n) == 0)
 		return 0;
 
 	return -5;
@@ -322,14 +322,14 @@ static u8 *find_cert_in_chain(u8 *sub, u8 *cert, u32 cert_len)
 	u8 *p;
 	u8 *issuer;
 
-	strncpy(parent, sub, sizeof parent);
+	strncpy(parent, (char *)sub, sizeof parent);
 	parent[sizeof parent - 1] = 0;
 	child = strrchr(parent, '-');
 	if (child)
 		*child++ = 0;
 	else {
 		*parent = 0;
-		child = sub;
+		child = (char *)sub;
 	}
 
 	for (p = cert; p < cert + cert_len; p += sig_len + sub_len) {
@@ -341,8 +341,8 @@ static u8 *find_cert_in_chain(u8 *sub, u8 *cert, u32 cert_len)
 		if (sub_len == 0)
 			return 0;
 
-		if (strcmp(parent, issuer) == 0
-		    && strcmp(child, issuer + 0x44) == 0)
+		if (strcmp(parent, (char *)issuer) == 0
+		    && strcmp(child, (char *)issuer + 0x44) == 0)
 			return p;
 	}
 
@@ -371,7 +371,7 @@ int check_cert_chain(u8 *data, u32 data_len, u8 *cert, u32 cert_len)
 
 	for (;;) {
 fprintf(stderr, ">>>>>> checking sig by %s...\n", sub);
-		if (strcmp(sub, "Root") == 0) {
+		if (strcmp((char *)sub, "Root") == 0) {
 			key = get_root_key();
 			sha(sub, sub_len, h);
 			if (be32(sig) != 0x10000)
@@ -423,7 +423,7 @@ int check_cert_chain_trucha(u8 *data, u32 data_len, u8 *cert, u32 cert_len)
 
 	for (;;) {
 fprintf(stderr, ">>>>>> checking trucha sig by %s...\n", sub);
-		if (strcmp(sub, "Root") == 0) {
+		if (strcmp((char *)sub, "Root") == 0) {
 			key = get_root_key();
 			sha(sub, sub_len, h);
 			if (be32(sig) != 0x10000)
@@ -451,51 +451,6 @@ fprintf(stderr, ">>>>>> checking trucha sig by %s...\n", sub);
 		if (sub_len == 0)
 			return -5;
 	}
-}
-
-//
-// compression
-//
-
-void do_yaz0(u8 *in, u32 in_size, u8 *out, u32 out_size)
-{
-	u32 nout;
-	u8 bits;
-	u32 nbits;
-	u32 n, d, i;
-
-	bits = 0;
-	nbits = 0;
-	in += 0x10;
-	for (nout = 0; nout < out_size; ) {
-		if (nbits == 0) {
-			bits = *in++;
-			nbits = 8;
-		}
-
-		if ((bits & 0x80) != 0) {
-			*out++ = *in++;
-			nout++;
-		} else {
-			n = *in++;
-			d = *in++;
-			d |= (n << 8) & 0xf00;
-			n >>= 4;
-			if (n == 0)
-				n = 0x10 + *in++;
-			n += 2;
-			d++;
-
-			for (i = 0; i < n; i++) {
-				*out = *(out - d);
-				out++;
-			}
-			nout += n;
-		}
-
-		nbits--;
-		bits <<= 1;
-	};
 }
 
 //
@@ -583,7 +538,7 @@ void printHashMD5(u8 *hash) {
 	//printf("\n");
 }
 
-u64 getfilesize(u32 *fd) {
+u64 getfilesize(FILE *fd) {
 	u64 len_b;
 	u64 len;
 	len_b = ftell(fd);

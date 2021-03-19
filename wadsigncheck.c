@@ -38,8 +38,6 @@ static void do_install_wad(u8 *header)
 	u32 cert_len;
 	u32 tik_len;
 	u32 tmd_len;
-	u32 app_len;
-	u32 trailer_len;
 	u8 *cert;
 	u8 *tik;
 	u8 *tmd;
@@ -52,8 +50,8 @@ static void do_install_wad(u8 *header)
 	cert_len = be32(header + 8);
 	tik_len = be32(header + 0x10);
 	tmd_len = be32(header + 0x14);
-	app_len = be32(header + 0x18);
-	trailer_len = be32(header + 0x1c);
+	//app_len = be32(header + 0x18);
+	//trailer_len = be32(header + 0x1c);
 
 	cert = get_wad(cert_len);
 	tik = get_wad(tik_len);

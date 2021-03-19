@@ -5,6 +5,8 @@
 #ifndef _TOOLS_H
 #define _TOOLS_H
 
+#include <stdio.h>
+
 // basic data types
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -39,18 +41,15 @@ void aes_cbc_dec(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out);
 void aes_cbc_enc(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out);
 void decrypt_title_key(u8 *tik, u8 *title_key);
 int check_cert_chain(u8 *data, u32 data_len, u8 *cert, u32 cert_len);
-int check_ec(u8 *ng, u8 *ap, u8 *sig, u8 *sig_hash);
+int check_cert_chain_trucha(u8* data, u32 data_len, u8* cert, u32 cert_len);
 void generate_ecdsa(u8 *R, u8 *S, u8 *k, u8 *hash);
 int check_ecdsa(u8 *Q, u8 *R, u8 *S, u8 *hash);
 void ec_priv_to_pub(u8 *k, u8 *Q);
 int TMD_resign(u8 *tmd, u32 tmd_len);
 int Ticket_resign(u8 *tmd, u32 tmd_len, u8 type);
-u64 getfilesize(u32 *file);
+u64 getfilesize(FILE *file);
 void printHashSHA(u8 *hash);
 void printHashMD5(u8 *hash);
-
-// compression
-void do_yaz0(u8 *in, u32 in_size, u8 *out, u32 out_size);
 
 // error handling
 void fatal(const char *s, ...);

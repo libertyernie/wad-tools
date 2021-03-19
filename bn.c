@@ -7,18 +7,6 @@
 
 #include "tools.h"
 
-static void bn_print(char *name, u8 *a, u32 n)
-{
-	u32 i;
-
-	printf("%s = ", name);
-
-	for (i = 0; i < n; i++)
-		printf("%02x", a[i]);
-
-	printf("\n");
-}
-
 static void bn_zero(u8 *d, u32 n)
 {
 	memset(d, 0, n);

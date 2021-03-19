@@ -32,7 +32,7 @@ static u8 *get_wad(u32 len)
 	return p;
 }
 
-static void do_app_file(u8 *app, u32 app_len, u8 *tik, u8 *tmd)
+static void do_app_file(u8 *app, u8 *tik, u8 *tmd)
 {
 	u8 title_key[16];
 	u8 iv[16];
@@ -98,7 +98,6 @@ static void do_install_wad(u8 *header)
 	u8 *tmd;
 	u8 *app;
 	u8 *trailer;
-	u32 ret;
 	char name[25];
 
 	header_len = be32(header);
@@ -174,7 +173,7 @@ static void do_install_wad(u8 *header)
 	
 	if (chdir(".."))
 		fatal("chdir ..", name);
-	do_app_file(app, app_len, tik, tmd);
+	do_app_file(app, tik, tmd);
 }
 
 static void do_wad(void)

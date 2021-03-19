@@ -8,3 +8,7 @@ together a couple of different versions to use as a base:
 
 * https://github.com/asdfjkluiop/wadpacker
 * https://github.com/AuroraWright/FunKii
+
+Other fixes include:
+
+* All gcc compiler warnings taken care of

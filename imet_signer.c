@@ -19,10 +19,10 @@ int main(int argc, char **argv)
 	u8 hash[16];
 	FILE *fp;
 	u32 i,j;
-	u8 *text;
+	char *text;
 	u8 add = 0x00;
-	u8 *banner;
-	u8 *author;
+	char *banner;
+	char *author;
 	
 	if (argc==3) add = 0x01;
 	else if (argc==2) add = 0x00;
@@ -45,15 +45,15 @@ int main(int argc, char **argv)
 
 	if(add) {
 	
-		text = (u8 *)malloc(6*0x0054);
+		text = (char *)malloc(6*0x0054);
 		memset(text, 0x00, 6*0x0054); // Remove current channel names
 		fp = fopen(argv[2], "rb");
 		if (!fp) {
 			printf("Cannot read file %s.\n", argv[2]); 
 			exit(1);
 		}
-		banner = (u8 *)malloc(0x20); memset(banner, 0x00, 0x20);
-		author = (u8 *)malloc(0x10); memset(author, 0x00, 0x10);
+		banner = (char *)malloc(0x20); memset(banner, 0x00, 0x20);
+		author = (char *)malloc(0x10); memset(author, 0x00, 0x10);
 		if (fgets(banner, 0x20, fp)==NULL) {
 			printf("Cannot read file %s.\n", argv[2]); 
 			exit(1);
