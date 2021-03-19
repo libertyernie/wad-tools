@@ -141,12 +141,21 @@ void aes_cbc_enc(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 	AES_cbc_encrypt(in, out, len, &aes_key, iv, AES_ENCRYPT);
 }
 
+static u8 common_key[16];
+static int common_key_loaded = 0;
+
+void load_common_key(const char *path)
+{
+	get_key(path, common_key, 16);
+	common_key_loaded = 1;
+}
+
 void decrypt_title_key(u8 *tik, u8 *title_key)
 {
-	u8 common_key[16];
 	u8 iv[16];
 
-	get_key("common-key.bin", common_key, 16);
+	if (!common_key_loaded)
+		load_common_key("common-key.bin");
 
 	memset(iv, 0, sizeof iv);
 	memcpy(iv, tik + 0x01dc, 8);

@@ -19,7 +19,8 @@ void printUsage(char *u) {
 	printf("         -T\t\tTrucha sign Ticket\n");
 	printf("         -M\t\tTrucha sign TMD\n");
 	printf("         -i ABCD\tChange the title id\n");
-	printf("         -w\t\tUses a compatible generic ticket.\n\n");
+	printf("         -k file.bin\tSet path to common-key\n");
+	printf("         -w\t\tUses a compatible generic ticket.\n");
 	printf("         -e\t\tDisable content encryption.\n\n");
 	exit(-1);
 }
@@ -82,6 +83,8 @@ int main(int argc, char **argv) {
 				} else {
 					printUsage(argv[0]);
 				}
+			} else if (strcmp(argv[i-1], "-k")==0) { // Change common-key.bin path
+				load_common_key(argv[i]);
 			} else if (strcmp(argv[i-1], "-w")==0) { // Disable watermark
 				sign_type = 0;
 				printf("A generic ticket will be used.\n");

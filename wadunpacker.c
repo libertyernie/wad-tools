@@ -15,6 +15,7 @@
 #define ERROR(s) do { fprintf(stderr, s "\n"); exit(1); } while (0)
 
 static FILE *fp;
+static const char* output_directory_name;
 
 static u8 *get_wad(u32 len)
 {
@@ -50,9 +51,13 @@ static void do_app_file(u8 *app, u8 *tik, u8 *tmd)
 	decrypt_title_key(tik, title_key);
 
 	sprintf(name, "%016llx", be64(tmd + 0x018c));
-	mkdir(name, 0777);
-	if (chdir(name))
-		fatal("chdir %s", name);
+
+	const char* directory_name = output_directory_name != NULL
+		? output_directory_name
+		: name;
+	mkdir(directory_name, 0777);
+	if (chdir(directory_name))
+		fatal("chdir %s", directory_name);
 
 	num_contents = be16(tmd + 0x01de);
 	p = app;
@@ -120,10 +125,12 @@ static void do_install_wad(u8 *header)
 	// File Dump
 	// Create/Select Folder
 	sprintf(name, "%016llx", be64(tmd + 0x018c));
-	if (mkdir(name, 0777))
-		fatal("mkdir %s", name);
-	if (chdir(name))
-		fatal("chdir %s", name);
+	const char* directory_name = output_directory_name != NULL
+		? output_directory_name
+		: name;
+	mkdir(directory_name, 0777);
+	if (chdir(directory_name))
+		fatal("chdir %s", directory_name);
 	// File Dump
 	sprintf(name, "%016llx.cert", be64(tmd + 0x018c));
 	FILE *cf = fopen(name, "w");
@@ -212,14 +219,22 @@ hexdump(header, header_len);
 
 int main(int argc, char **argv)
 {
-	if (argc!=2) {
-		printf("USAGE: wadunpacker wad_file\n");
+	if (argc < 2 || argc > 4) {
+		printf("USAGE: wadunpacker wad_file [directory_name] [common_key_path]\n");
 		exit(-1);
 	}
 	fp = fopen(argv[1], "rb");
 	if (!fp) {
 		printf("Cannot open file %s.\n", argv[1]);
 		exit(-1);
+	}
+
+	if (argc >= 3) {
+		output_directory_name = argv[2];
+	}
+
+	if (argc >= 4) {
+		load_common_key(argv[3]);
 	}
 	
 	while (!feof(fp))
