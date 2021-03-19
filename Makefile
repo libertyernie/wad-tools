@@ -1,5 +1,5 @@
 PROGS = wadpacker wadunpacker wadsigncheck imet_signer
-COMMON = tools.o bn.o ec.o
+COMMON = tools.o bn.o
 DEFINES = -DLARGE_FILES -D_FILE_OFFSET_BITS=64
 LIBS = -lcrypto
 

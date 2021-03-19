@@ -209,26 +209,6 @@ static u32 get_sub_len(u8 *sub)
 	return 0;
 }
 
-int check_ec(u8 *ng, u8 *ap, u8 *sig, u8 *sig_hash)
-{
-	u8 ap_hash[20];
-	u8 *ng_Q, *ap_R, *ap_S;
-	u8 *ap_Q, *sig_R, *sig_S;
-
-	ng_Q = ng + 0x0108;
-	ap_R = ap + 0x04;
-	ap_S = ap + 0x22;
-
-	SHA1(ap + 0x80, 0x100, ap_hash);
-
-	ap_Q = ap + 0x0108;
-	sig_R = sig;
-	sig_S = sig + 30;
-
-	return check_ecdsa(ng_Q, ap_R, ap_S, ap_hash)
-	       && check_ecdsa(ap_Q, sig_R, sig_S, sig_hash);
-}
-
 static int check_rsa(u8 *h, u8 *sig, u8 *key, u32 n)
 {
 	u8 correct[0x200];

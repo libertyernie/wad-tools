@@ -18,3 +18,4 @@ has a new `-k` argument that lets you specify the path to common-key.bin.
 Other fixes include:
 
 * All gcc compiler warnings taken care of
+* Unused code removed
