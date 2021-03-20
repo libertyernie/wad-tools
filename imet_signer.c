@@ -1,7 +1,7 @@
-// By BFGR
+// wad-tools
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-// BFGR WadTools v0.39a
+// Based on BFGR WadTools v0.39a by BFGR based on Zeventig by Segher
 
 #include <sys/types.h>
 #include <sys/stat.h>
