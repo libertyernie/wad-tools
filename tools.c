@@ -18,7 +18,7 @@
 // basic data types
 //
 
-u8 generic_tik[676]={
+char generic_tik[676]={
 	0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -213,8 +213,8 @@ static int check_rsa(u8 *h, u8 *sig, u8 *key, u32 n)
 {
 	u8 correct[0x200];
 	u8 x[0x200];
-	static const u8 ber[16] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
-	                          "\x0e\x03\x02\x1a\x05\x00\x04\x14";
+	static const u8 ber[] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
+	                        "\x0e\x03\x02\x1a\x05\x00\x04\x14";
 
 //fprintf(stderr, "n = %x\n", n);
 //fprintf(stderr, "key:\n");
@@ -244,8 +244,8 @@ static int check_rsa_trucha(u8 *h, u8 *sig, u8 *key, u32 n)
 {
 	u8 correct[0x200];
 	u8 x[0x200];
-	static const u8 ber[16] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
-			"\x0e\x03\x02\x1a\x05\x00\x04\x14";
+	static const u8 ber[] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
+							"\x0e\x03\x02\x1a\x05\x00\x04\x14";
 
 //fprintf(stderr, "n = %x\n", n);
 //fprintf(stderr, "key:\n");
@@ -540,7 +540,7 @@ u64 getfilesize(FILE *fd) {
 // TMD trucha sign
 int TMD_resign(u8 *tmd, u32 tmd_len) {
 	u8 hash[20];
-	u16 num = 0x0000;
+	u32 num = 0x00000000;
 	u8 *sig;
 	u8 *sub;
 	u32 sig_len;

@@ -23,7 +23,7 @@ static u8 *get_wad(u32 len)
 	u8 *p;
 
 	rounded_len = round_up(len, 0x40);
-	p = malloc(rounded_len);
+	p = (u8*)malloc(rounded_len);
 	if (p == 0)
 		fatal("malloc");
 	if (len)
