@@ -19,3 +19,4 @@ Other fixes include:
 
 * All gcc compiler warnings taken care of
 * Unused code removed
+* Code can now compile as C++
