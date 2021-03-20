@@ -5,10 +5,26 @@
 
 #include "tools.h"
 
+#ifdef __cplusplus_cli
+using System::IO::FileAccess;
+using System::IO::Stream;
+using System::IO::UnmanagedMemoryStream;
+using System::Runtime::InteropServices::Marshal;
+using System::Security::Cryptography::Aes;
+using System::Security::Cryptography::CipherMode;
+using System::Security::Cryptography::CryptoStream;
+using System::Security::Cryptography::CryptoStreamMode;
+using System::Security::Cryptography::HashAlgorithm;
+using System::Security::Cryptography::ICryptoTransform;
+using System::Security::Cryptography::MD5;
+using System::Security::Cryptography::PaddingMode;
+using System::Security::Cryptography::SHA1;
+#else
 #include <stddef.h>	// to accommodate certain broken versions of openssl
 #include <openssl/md5.h>
 #include <openssl/aes.h>
 #include <openssl/sha.h>
+#endif
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,12 +114,28 @@ void wbe64(u8 *p, u64 x)
 
 void md5(u8 *data, u32 len, u8 *hash)
 {
+#ifdef __cplusplus_cli
+	UnmanagedMemoryStream^ inputStream = gcnew UnmanagedMemoryStream(data, len);
+	HashAlgorithm^ algorithm = MD5::Create();
+	array<u8>^ hashArr = algorithm->ComputeHash(inputStream);
+	pin_ptr<u8> pin = &hashArr[0];
+	memcpy(hash, pin, hashArr->Length);
+#else
 	MD5(data, len, hash);
+#endif
 }
 
 void sha(u8 *data, u32 len, u8 *hash)
 {
+#ifdef __cplusplus_cli
+	UnmanagedMemoryStream^ inputStream = gcnew UnmanagedMemoryStream(data, len);
+	HashAlgorithm^ algorithm = SHA1::Create();
+	array<u8>^ hashArr = algorithm->ComputeHash(inputStream);
+	pin_ptr<u8> pin = &hashArr[0];
+	memcpy(hash, pin, hashArr->Length);
+#else
 	SHA1(data, len, hash);
+#endif
 }
 
 void get_key(const char *name, u8 *key, u32 len)
@@ -127,18 +159,62 @@ void get_key(const char *name, u8 *key, u32 len)
 
 void aes_cbc_dec(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 {
+#ifdef __cplusplus_cli
+	array<u8>^ keyArr = gcnew array<u8>(16);
+	pin_ptr<u8> keyPin = &keyArr[0];
+	memcpy(keyPin, key, 16);
+
+	auto ivArr = gcnew array<u8>(16);
+	pin_ptr<u8> ivPin = &ivArr[0];
+	memcpy(ivPin, iv, 16);
+
+	Aes^ aes = System::Security::Cryptography::Aes::Create();
+	aes->Mode = System::Security::Cryptography::CipherMode::CBC;
+	aes->Padding = System::Security::Cryptography::PaddingMode::None;
+	ICryptoTransform^ decryptor = aes->CreateDecryptor(keyArr, ivArr);
+
+	Stream^ inputStream = gcnew UnmanagedMemoryStream(in, len, len, System::IO::FileAccess::Read);
+	Stream^ outputStream = gcnew UnmanagedMemoryStream(out, len, len, System::IO::FileAccess::Write);
+
+	Stream^ cryptoStream = gcnew CryptoStream(inputStream, decryptor, CryptoStreamMode::Read);
+
+	cryptoStream->CopyTo(outputStream);
+#else
 	AES_KEY aes_key;
 
 	AES_set_decrypt_key(key, 128, &aes_key);
 	AES_cbc_encrypt(in, out, len, &aes_key, iv, AES_DECRYPT);
+#endif
 }
 
 void aes_cbc_enc(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 {
+#ifdef __cplusplus_cli
+	array<u8>^ keyArr = gcnew array<u8>(16);
+	pin_ptr<u8> keyPin = &keyArr[0];
+	memcpy(keyPin, key, 16);
+
+	auto ivArr = gcnew array<u8>(16);
+	pin_ptr<u8> ivPin = &ivArr[0];
+	memcpy(ivPin, iv, 16);
+
+	Aes^ aes = System::Security::Cryptography::Aes::Create();
+	aes->Mode = System::Security::Cryptography::CipherMode::CBC;
+	aes->Padding = System::Security::Cryptography::PaddingMode::None;
+	ICryptoTransform^ encryptor = aes->CreateEncryptor(keyArr, ivArr);
+
+	Stream^ inputStream = gcnew UnmanagedMemoryStream(in, len, len, System::IO::FileAccess::Read);
+	Stream^ outputStream = gcnew UnmanagedMemoryStream(out, len, len, System::IO::FileAccess::Write);
+	
+	Stream^ cryptoStream = gcnew CryptoStream(inputStream, encryptor, CryptoStreamMode::Read);
+
+	cryptoStream->CopyTo(outputStream);
+#else
 	AES_KEY aes_key;
 
 	AES_set_encrypt_key(key, 128, &aes_key);
 	AES_cbc_encrypt(in, out, len, &aes_key, iv, AES_ENCRYPT);
+#endif
 }
 
 static u8 common_key[16];

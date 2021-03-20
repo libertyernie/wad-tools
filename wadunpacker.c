@@ -5,7 +5,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -55,7 +59,11 @@ static void do_app_file(u8 *app, u8 *tik, u8 *tmd)
 	const char* directory_name = output_directory_name != NULL
 		? output_directory_name
 		: name;
+#ifdef _MSC_VER
+	mkdir(directory_name);
+#else
 	mkdir(directory_name, 0777);
+#endif
 	if (chdir(directory_name))
 		fatal("chdir %s", directory_name);
 
@@ -128,28 +136,32 @@ static void do_install_wad(u8 *header)
 	const char* directory_name = output_directory_name != NULL
 		? output_directory_name
 		: name;
+#ifdef _MSC_VER
+	mkdir(directory_name);
+#else
 	mkdir(directory_name, 0777);
+#endif
 	if (chdir(directory_name))
 		fatal("chdir %s", directory_name);
 	// File Dump
 	sprintf(name, "%016llx.cert", be64(tmd + 0x018c));
-	FILE *cf = fopen(name, "w");
+	FILE *cf = fopen(name, "wb");
 	fwrite(cert, cert_len, 1, cf);
 	fclose(cf);
 	
 	if (trailer_len>0) {
 	sprintf(name, "%016llx.trailer", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(trailer, trailer_len, 1, cf);
 	fclose(cf);
 	}
 	sprintf(name, "%016llx.tmd", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(tmd, tmd_len, 1, cf);
 	fclose(cf);
 
 	sprintf(name, "%016llx.tik", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(tik, tik_len, 1, cf);
 	fclose(cf);
 
