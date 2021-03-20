@@ -1,15 +1,13 @@
 // Copyright 2007,2008  Segher Boessenkool  <segher@kernel.crashing.org>
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-// Modified by BFGR
+// Modified by BFGR and libertyernie
 
 #include "tools.h"
 
 #ifdef __cplusplus_cli
 using System::IO::FileAccess;
-using System::IO::Stream;
 using System::IO::UnmanagedMemoryStream;
-using System::Runtime::InteropServices::Marshal;
 using System::Security::Cryptography::Aes;
 using System::Security::Cryptography::CipherMode;
 using System::Security::Cryptography::CryptoStream;
@@ -115,9 +113,9 @@ void wbe64(u8 *p, u64 x)
 void md5(u8 *data, u32 len, u8 *hash)
 {
 #ifdef __cplusplus_cli
-	UnmanagedMemoryStream^ inputStream = gcnew UnmanagedMemoryStream(data, len);
 	HashAlgorithm^ algorithm = MD5::Create();
-	array<u8>^ hashArr = algorithm->ComputeHash(inputStream);
+	UnmanagedMemoryStream inputStream(data, len);
+	array<u8>^ hashArr = algorithm->ComputeHash(% inputStream);
 	pin_ptr<u8> pin = &hashArr[0];
 	memcpy(hash, pin, hashArr->Length);
 #else
@@ -128,9 +126,9 @@ void md5(u8 *data, u32 len, u8 *hash)
 void sha(u8 *data, u32 len, u8 *hash)
 {
 #ifdef __cplusplus_cli
-	UnmanagedMemoryStream^ inputStream = gcnew UnmanagedMemoryStream(data, len);
 	HashAlgorithm^ algorithm = SHA1::Create();
-	array<u8>^ hashArr = algorithm->ComputeHash(inputStream);
+	UnmanagedMemoryStream inputStream(data, len);
+	array<u8>^ hashArr = algorithm->ComputeHash(% inputStream);
 	pin_ptr<u8> pin = &hashArr[0];
 	memcpy(hash, pin, hashArr->Length);
 #else
@@ -168,17 +166,17 @@ void aes_cbc_dec(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 	pin_ptr<u8> ivPin = &ivArr[0];
 	memcpy(ivPin, iv, 16);
 
-	Aes^ aes = System::Security::Cryptography::Aes::Create();
-	aes->Mode = System::Security::Cryptography::CipherMode::CBC;
-	aes->Padding = System::Security::Cryptography::PaddingMode::None;
+	Aes^ aes = Aes::Create();
+	aes->Mode = CipherMode::CBC;
+	aes->Padding = PaddingMode::None;
 	ICryptoTransform^ decryptor = aes->CreateDecryptor(keyArr, ivArr);
 
-	Stream^ inputStream = gcnew UnmanagedMemoryStream(in, len, len, System::IO::FileAccess::Read);
-	Stream^ outputStream = gcnew UnmanagedMemoryStream(out, len, len, System::IO::FileAccess::Write);
+	UnmanagedMemoryStream inputStream(in, len, len, System::IO::FileAccess::Read);
+	UnmanagedMemoryStream outputStream(out, len, len, System::IO::FileAccess::Write);
 
-	Stream^ cryptoStream = gcnew CryptoStream(inputStream, decryptor, CryptoStreamMode::Read);
+	CryptoStream cryptoStream(% inputStream, decryptor, CryptoStreamMode::Read);
 
-	cryptoStream->CopyTo(outputStream);
+	cryptoStream.CopyTo(% outputStream);
 #else
 	AES_KEY aes_key;
 
@@ -198,17 +196,17 @@ void aes_cbc_enc(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 	pin_ptr<u8> ivPin = &ivArr[0];
 	memcpy(ivPin, iv, 16);
 
-	Aes^ aes = System::Security::Cryptography::Aes::Create();
-	aes->Mode = System::Security::Cryptography::CipherMode::CBC;
-	aes->Padding = System::Security::Cryptography::PaddingMode::None;
+	Aes^ aes = Aes::Create();
+	aes->Mode = CipherMode::CBC;
+	aes->Padding = PaddingMode::None;
 	ICryptoTransform^ encryptor = aes->CreateEncryptor(keyArr, ivArr);
 
-	Stream^ inputStream = gcnew UnmanagedMemoryStream(in, len, len, System::IO::FileAccess::Read);
-	Stream^ outputStream = gcnew UnmanagedMemoryStream(out, len, len, System::IO::FileAccess::Write);
+	UnmanagedMemoryStream inputStream(in, len, len, System::IO::FileAccess::Read);
+	UnmanagedMemoryStream outputStream(out, len, len, System::IO::FileAccess::Write);
 	
-	Stream^ cryptoStream = gcnew CryptoStream(inputStream, encryptor, CryptoStreamMode::Read);
+	CryptoStream cryptoStream(% inputStream, encryptor, CryptoStreamMode::Read);
 
-	cryptoStream->CopyTo(outputStream);
+	cryptoStream.CopyTo(% outputStream);
 #else
 	AES_KEY aes_key;
 
