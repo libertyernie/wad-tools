@@ -5,7 +5,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,6 +19,7 @@
 #define ERROR(s) do { fprintf(stderr, s "\n"); exit(1); } while (0)
 
 static FILE *fp;
+static const char* output_directory_name;
 
 static u8 *get_wad(u32 len)
 {
@@ -22,7 +27,7 @@ static u8 *get_wad(u32 len)
 	u8 *p;
 
 	rounded_len = round_up(len, 0x40);
-	p = malloc(rounded_len);
+	p = (u8*)malloc(rounded_len);
 	if (p == 0)
 		fatal("malloc");
 	if (len)
@@ -50,7 +55,11 @@ static void do_app_file(u8 *app, u32 app_len, u8 *tik, u8 *tmd)
 	decrypt_title_key(tik, title_key);
 
 	sprintf(name, "%016llx", be64(tmd + 0x018c));
+#ifdef _MSC_VER
+	mkdir(name);
+#else
 	mkdir(name, 0777);
+#endif
 	if (chdir(name))
 		fatal("chdir %s", name);
 
@@ -99,7 +108,7 @@ static void do_install_wad(u8 *header)
 	u8 *app;
 	u8 *trailer;
 	u32 ret;
-	char name[17];
+	char name[25];
 
 	header_len = be32(header);
 	if (header_len != 0x20)
@@ -121,32 +130,36 @@ static void do_install_wad(u8 *header)
 	// File Dump
 	// Create/Select Folder
 	sprintf(name, "%016llx", be64(tmd + 0x018c));
+#ifdef _MSC_VER
+	if (mkdir(name))
+#else
 	if (mkdir(name, 0777))
+#endif
 		fatal("mkdir %s", name);
 	if (chdir(name))
 		fatal("chdir %s", name);
 	// File Dump
 	sprintf(name, "%016llx.cert", be64(tmd + 0x018c));
-	FILE *cf = fopen(name, "w");
+	FILE *cf = fopen(name, "wb");
 	fwrite(cert, cert_len, 1, cf);
 	fclose(cf);
 	
 	if (trailer_len>0) {
 	sprintf(name, "%016llx.trailer", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(trailer, trailer_len, 1, cf);
 	fclose(cf);
 	}
 	sprintf(name, "%016llx.tmd", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(tmd, tmd_len, 1, cf);
 	fclose(cf);
 
 	sprintf(name, "%016llx.tik", be64(tmd + 0x018c));
-	cf = fopen(name, "w");
+	cf = fopen(name, "wb");
 	fwrite(tik, tik_len, 1, cf);
 	fclose(cf);
-	
+
 	fprintf(stderr, "ticket:\n");
 	hexdump(tik, tik_len);
 	fprintf(stderr, "tmd:\n");
@@ -222,7 +235,7 @@ int main(int argc, char **argv)
 		printf("Cannot open file %s.\n", argv[1]);
 		exit(-1);
 	}
-	
+
 	while (!feof(fp))
 		do_wad();
 

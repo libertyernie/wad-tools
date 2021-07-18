@@ -5,7 +5,11 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -74,7 +78,7 @@ int main(int argc, char **argv) {
 				if (strlen(argv[i])==4) {
 					new_id = (u8 *)malloc(4);
 					memset(new_id, 0, 4);
-					strncpy(new_id, argv[i], 4);
+					strncpy((char*)new_id, argv[i], 4);
 					i++;
 					printf("New Title ID: %s\n", new_id);
 				} else {
@@ -93,7 +97,7 @@ int main(int argc, char **argv) {
 	temp = getfilesize(fcert);
 	len_cert_nb = temp;
 	len_cert = round_up(temp, 0x40);
-	cert = malloc(len_cert);
+	cert = (u8*)malloc(len_cert);
 	memset(cert, 0, len_cert);
 	fread(cert, temp, 1, fcert);
 	fclose(fcert);
@@ -104,7 +108,7 @@ int main(int argc, char **argv) {
 	temp = getfilesize(ftrailer);
 	len_trailer_nb = temp;
 	len_trailer = round_up(temp, 0x40);
-	trailer = malloc(len_trailer);
+	trailer = (u8*)malloc(len_trailer);
 	memset(trailer, 0, len_trailer);
 	fread(trailer, temp, 1, ftrailer);
 	fclose(ftrailer);
@@ -115,7 +119,7 @@ int main(int argc, char **argv) {
 	temp = getfilesize(ftmd);
 	len_tmd_nb = temp;
 	len_tmd = round_up(temp, 0x40);
-	tmd = malloc(len_tmd);
+	tmd = (u8*)malloc(len_tmd);
 	memset(tmd, 0, len_tmd);
 	fread(tmd, temp, 1, ftmd);
 	num_app = be16(tmd + 0x01de);
@@ -128,7 +132,7 @@ int main(int argc, char **argv) {
 	temp = getfilesize(ftik);
 	len_tik = round_up(temp, 0x40);
 	len_tik_nb = temp;
-	tik = malloc(len_tik);
+	tik = (u8*)malloc(len_tik);
 	memset(tik, 0, len_tik);
 	fread(tik, temp, 1, ftik);
 	fclose(ftik);
@@ -186,7 +190,7 @@ int main(int argc, char **argv) {
 	}
  	// Header
 	printf("Header... ");
-	u8 *header = malloc(0x40);
+	u8 *header = (u8*)malloc(0x40);
 	memset(header, 0, 0x40);
 
 	wbe32(header, 0x20); // Header size
@@ -198,7 +202,7 @@ int main(int argc, char **argv) {
 	wbe32(header + 0x18, len_apps); // APP length
 	wbe32(header + 0x1C, len_trailer_nb); // Trailer length
 	printf("OK\n");
-	
+
 	//Write final WAD file
 	printf("Writing %s file... ", argv[4]);
 	fapp = fopen(argv[4], "wb");

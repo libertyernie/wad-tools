@@ -5,10 +5,24 @@
 
 #include "tools.h"
 
+#ifdef __cplusplus_cli
+using System::IO::FileAccess;
+using System::IO::UnmanagedMemoryStream;
+using System::Security::Cryptography::Aes;
+using System::Security::Cryptography::CipherMode;
+using System::Security::Cryptography::CryptoStream;
+using System::Security::Cryptography::CryptoStreamMode;
+using System::Security::Cryptography::HashAlgorithm;
+using System::Security::Cryptography::ICryptoTransform;
+using System::Security::Cryptography::MD5;
+using System::Security::Cryptography::PaddingMode;
+using System::Security::Cryptography::SHA1;
+#else
 #include <stddef.h>	// to accommodate certain broken versions of openssl
 #include <openssl/md5.h>
 #include <openssl/aes.h>
 #include <openssl/sha.h>
+#endif
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,12 +112,28 @@ void wbe64(u8 *p, u64 x)
 
 void md5(u8 *data, u32 len, u8 *hash)
 {
+#ifdef __cplusplus_cli
+	HashAlgorithm^ algorithm = MD5::Create();
+	UnmanagedMemoryStream inputStream(data, len);
+	array<u8>^ hashArr = algorithm->ComputeHash(% inputStream);
+	pin_ptr<u8> pin = &hashArr[0];
+	memcpy(hash, pin, hashArr->Length);
+#else
 	MD5(data, len, hash);
+#endif
 }
 
 void sha(u8 *data, u32 len, u8 *hash)
 {
+#ifdef __cplusplus_cli
+	HashAlgorithm^ algorithm = SHA1::Create();
+	UnmanagedMemoryStream inputStream(data, len);
+	array<u8>^ hashArr = algorithm->ComputeHash(% inputStream);
+	pin_ptr<u8> pin = &hashArr[0];
+	memcpy(hash, pin, hashArr->Length);
+#else
 	SHA1(data, len, hash);
+#endif
 }
 
 void get_key(const char *name, u8 *key, u32 len)
@@ -127,18 +157,62 @@ void get_key(const char *name, u8 *key, u32 len)
 
 void aes_cbc_dec(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 {
+#ifdef __cplusplus_cli
+	array<u8>^ keyArr = gcnew array<u8>(16);
+	pin_ptr<u8> keyPin = &keyArr[0];
+	memcpy(keyPin, key, 16);
+
+	auto ivArr = gcnew array<u8>(16);
+	pin_ptr<u8> ivPin = &ivArr[0];
+	memcpy(ivPin, iv, 16);
+
+	Aes^ aes = Aes::Create();
+	aes->Mode = CipherMode::CBC;
+	aes->Padding = PaddingMode::None;
+	ICryptoTransform^ decryptor = aes->CreateDecryptor(keyArr, ivArr);
+
+	UnmanagedMemoryStream inputStream(in, len, len, System::IO::FileAccess::Read);
+	UnmanagedMemoryStream outputStream(out, len, len, System::IO::FileAccess::Write);
+
+	CryptoStream cryptoStream(% inputStream, decryptor, CryptoStreamMode::Read);
+
+	cryptoStream.CopyTo(% outputStream);
+#else
 	AES_KEY aes_key;
 
 	AES_set_decrypt_key(key, 128, &aes_key);
 	AES_cbc_encrypt(in, out, len, &aes_key, iv, AES_DECRYPT);
+#endif
 }
 
 void aes_cbc_enc(u8 *key, u8 *iv, u8 *in, u32 len, u8 *out)
 {
+#ifdef __cplusplus_cli
+	array<u8>^ keyArr = gcnew array<u8>(16);
+	pin_ptr<u8> keyPin = &keyArr[0];
+	memcpy(keyPin, key, 16);
+
+	auto ivArr = gcnew array<u8>(16);
+	pin_ptr<u8> ivPin = &ivArr[0];
+	memcpy(ivPin, iv, 16);
+
+	Aes^ aes = Aes::Create();
+	aes->Mode = CipherMode::CBC;
+	aes->Padding = PaddingMode::None;
+	ICryptoTransform^ encryptor = aes->CreateEncryptor(keyArr, ivArr);
+
+	UnmanagedMemoryStream inputStream(in, len, len, System::IO::FileAccess::Read);
+	UnmanagedMemoryStream outputStream(out, len, len, System::IO::FileAccess::Write);
+	
+	CryptoStream cryptoStream(% inputStream, encryptor, CryptoStreamMode::Read);
+
+	cryptoStream.CopyTo(% outputStream);
+#else
 	AES_KEY aes_key;
 
 	AES_set_encrypt_key(key, 128, &aes_key);
 	AES_cbc_encrypt(in, out, len, &aes_key, iv, AES_ENCRYPT);
+#endif
 }
 
 void decrypt_title_key(u8 *tik, u8 *title_key)
@@ -202,9 +276,12 @@ static u32 get_sub_len(u8 *sub)
 
 int check_ec(u8 *ng, u8 *ap, u8 *sig, u8 *sig_hash)
 {
+#ifdef __cplusplus_cli
+	throw gcnew System::NotImplementedException();
+#else
 	u8 ap_hash[20];
-	u8 *ng_Q, *ap_R, *ap_S;
-	u8 *ap_Q, *sig_R, *sig_S;
+	u8* ng_Q, * ap_R, * ap_S;
+	u8* ap_Q, * sig_R, * sig_S;
 
 	ng_Q = ng + 0x0108;
 	ap_R = ap + 0x04;
@@ -217,14 +294,15 @@ int check_ec(u8 *ng, u8 *ap, u8 *sig, u8 *sig_hash)
 	sig_S = sig + 30;
 
 	return check_ecdsa(ng_Q, ap_R, ap_S, ap_hash)
-	       && check_ecdsa(ap_Q, sig_R, sig_S, sig_hash);
+		&& check_ecdsa(ap_Q, sig_R, sig_S, sig_hash);
+#endif
 }
 
 static int check_rsa(u8 *h, u8 *sig, u8 *key, u32 n)
 {
 	u8 correct[0x200];
 	u8 x[0x200];
-	static const u8 ber[16] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
+	static const u8 ber[17] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
 	                          "\x0e\x03\x02\x1a\x05\x00\x04\x14";
 
 //fprintf(stderr, "n = %x\n", n);
@@ -255,28 +333,28 @@ static int check_rsa_trucha(u8 *h, u8 *sig, u8 *key, u32 n)
 {
 	u8 correct[0x200];
 	u8 x[0x200];
-	static const u8 ber[16] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
-			"\x0e\x03\x02\x1a\x05\x00\x04\x14";
+	static const u8 ber[17] = "\x00\x30\x21\x30\x09\x06\x05\x2b"
+		"\x0e\x03\x02\x1a\x05\x00\x04\x14";
 
-//fprintf(stderr, "n = %x\n", n);
-//fprintf(stderr, "key:\n");
-//hexdump(key, n);
-//fprintf(stderr, "sig:\n");
-//hexdump(sig, n);
+	//fprintf(stderr, "n = %x\n", n);
+	//fprintf(stderr, "key:\n");
+	//hexdump(key, n);
+	//fprintf(stderr, "sig:\n");
+	//hexdump(sig, n);
 
 	correct[0] = 0;
 	correct[1] = 1;
 	memset(correct + 2, 0xff, n - 38);
 	memcpy(correct + n - 36, ber, 16);
 	memcpy(correct + n - 20, h, 20);
-//fprintf(stderr, "correct is:\n");
-//hexdump(correct, n);
+	//fprintf(stderr, "correct is:\n");
+	//hexdump(correct, n);
 
 	bn_exp(x, sig, key, n, key + n, 4);
-//fprintf(stderr, "x is:\n");
-//hexdump(x, n);
+	//fprintf(stderr, "x is:\n");
+	//hexdump(x, n);
 
-	if (strncmp(correct, x, n) == 0)
+	if (strncmp((char*)correct, (char*)x, n) == 0)
 		return 0;
 
 	return -5;
@@ -307,8 +385,8 @@ static int check_hash_trucha(u8 *h, u8 *sig, u8 *key)
 		return -6;
 
 	switch (type) {
-		case 1:
-			return check_rsa_trucha(h, sig + 4, key + 0x88, 0x100);
+	case 1:
+		return check_rsa_trucha(h, sig + 4, key + 0x88, 0x100);
 	}
 
 	return -7;
@@ -322,14 +400,14 @@ static u8 *find_cert_in_chain(u8 *sub, u8 *cert, u32 cert_len)
 	u8 *p;
 	u8 *issuer;
 
-	strncpy(parent, sub, sizeof parent);
+	strncpy(parent, (char*)sub, sizeof parent);
 	parent[sizeof parent - 1] = 0;
 	child = strrchr(parent, '-');
 	if (child)
 		*child++ = 0;
 	else {
 		*parent = 0;
-		child = sub;
+		child = (char*)sub;
 	}
 
 	for (p = cert; p < cert + cert_len; p += sig_len + sub_len) {
@@ -341,8 +419,8 @@ static u8 *find_cert_in_chain(u8 *sub, u8 *cert, u32 cert_len)
 		if (sub_len == 0)
 			return 0;
 
-		if (strcmp(parent, issuer) == 0
-		    && strcmp(child, issuer + 0x44) == 0)
+		if (strcmp(parent, (char*)issuer) == 0
+		    && strcmp(child, (char*)issuer + 0x44) == 0)
 			return p;
 	}
 
@@ -371,7 +449,7 @@ int check_cert_chain(u8 *data, u32 data_len, u8 *cert, u32 cert_len)
 
 	for (;;) {
 fprintf(stderr, ">>>>>> checking sig by %s...\n", sub);
-		if (strcmp(sub, "Root") == 0) {
+		if (strcmp((char*)sub, "Root") == 0) {
 			key = get_root_key();
 			sha(sub, sub_len, h);
 			if (be32(sig) != 0x10000)
@@ -423,7 +501,7 @@ int check_cert_chain_trucha(u8 *data, u32 data_len, u8 *cert, u32 cert_len)
 
 	for (;;) {
 fprintf(stderr, ">>>>>> checking trucha sig by %s...\n", sub);
-		if (strcmp(sub, "Root") == 0) {
+		if (strcmp((char*)sub, "Root") == 0) {
 			key = get_root_key();
 			sha(sub, sub_len, h);
 			if (be32(sig) != 0x10000)
@@ -583,7 +661,7 @@ void printHashMD5(u8 *hash) {
 	//printf("\n");
 }
 
-u64 getfilesize(u32 *fd) {
+u64 getfilesize(FILE *fd) {
 	u64 len_b;
 	u64 len;
 	len_b = ftell(fd);
@@ -637,7 +715,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 	u32 sub_len;
 	u8 *new_tik;
 	u8 part[16] = {0x42, 0x46, 0x47, 0x52, 0x42, 0x65, 0x46, 0x72, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x21};
-	
+
 	if (!homebrew) { // option -w enabled (watermark disabled)
 		new_tik = (u8 *)malloc(676);
 		memcpy(new_tik, generic_tik, 676);
@@ -661,7 +739,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 	// Check if the ticket is already signed
 	sha(sub, sub_len, hash);
 	if (hash[0]==0x00) { printf(" %d it. ", num); return 1; }
-	
+
 	if (homebrew) { // Set watermark
 		memcpy(tik + 0x01BF, part, 16);
 	}
@@ -676,7 +754,7 @@ int Ticket_resign(u8 *tik, u32 tik_len, u8 homebrew) {
 		sha(sub, sub_len,hash);
 		//printHashSHA(hash);
 		if (hash[0]==0x00) break;
-		
+
 		if (num==65535) return 0;
 		// Title key mod
 		memcpy(tik + 0x01F1, &num, sizeof(u16));
